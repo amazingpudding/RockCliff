@@ -4,46 +4,44 @@ Import-Module -Name phxfunctions -Force -DisableNameChecking
 login-usingsp
 
 # Create static groups
+$existinggroups = Get-MgGroup
+foreach ($department in @("Finance","Legal","Markets","Operations")) {
+    if ($existinggroups.DisplayName -notcontains "ADG_$department") {
+        New-MgGroup -DisplayName "ADG_$department" -MailEnabled:$false -MailNickname $department -SecurityEnabled
+    }
+}
 
-# Create dynamic group (if dept -ne null OR upn is chris.crain@phoenixfinancialcapital.onmicrosoft.com)
+# Create dynamic group (if dept -ne null) and assign licenses to it
+$dynamicgroupname = "ADG_All_Users"
+if ($existinggroups.DisplayName -notcontains $dynamicgroupname) {
+    New-MgGroup -DisplayName $dynamicgroupname -MailEnabled:$false -MailNickname $dynamicgroupname -SecurityEnabled -GroupTypes "DynamicMembership" -MembershipRule "(user.department -ne null)" -MembershipRuleProcessingState "On"
+}
 
-# Assign dynamic group virtual machine logon role at the subscription level
+# Sleep here to allow groups to finish provisioning
+sleep 5
 
 # Import user mapping file
 $users = (import-csv "usernamelist.csv")
 $userupnspws = @();
 
-# Provision users with random passwords
+# Provision users with random passwords and join to group
 foreach ($userobj in $users)
 { 
+    # Generate random password
     $randompassword = Generate-RandomPassword 16
-    Create-AzADUser $userobj $randompassword
-
-    # For the purposes of this project only- export all upns and passwords
-    $userupnspws += $userobj | select FirstName, LastName, @{N="password";E={$randompassword}}
-
+    
+    # Create manipulatable useraadobj
+    $useraadobj = Create-AzADUser $userobj $randompassword
+    
+    # Assign user to relevant group
+    $targetgroupdisplayname = "ADG_" + $useraadobj.department
+    New-MgGroupMember -GroupId ($existinggroups | ? DisplayName -eq $targetgroupdisplayname).Id -DirectoryObjectId $useraadobj.Id
+    
+    # For the purposes of this project only! Write useraadobj to an array with upns and passwords
+    $userupnspws += $useraadobj | select DisplayName, UserPrincipalName, @{N="password";E={$randompassword}}
 }
 
-# Write userupnspws file for demo purposes
+# Write users and passwords array to a file
 $userupnspws | Export-Csv .\userspws.csv -NoTypeInformation
-
-# Apparently the department attribute doesn't immediately reflect. Sleep here for 15 seconds.
-sleep 15
-
-# Seems more efficient to loop through the groups and check their current members than looping through each user and checking their group membership. Will write a separate function for one off group additions
-# Also worth noting dynamic groups that look at the department may be the better option here depending on future flexibility requirements
-foreach ($group in Get-MgGroup | ? displayname -like "ADG_*") {
-    $groupmemberids = (Get-MgGroupMember -GroupId $group.Id).Id
-    $depttoken = $group.DisplayName.replace("ADG_","")
-    Get-MgUser -ConsistencyLevel eventual -Count userCount -Search ("Department:$depttoken") | % {
-        if ($groupmemberids -notcontains $_.Id) {
-            Write-Host "Adding" $_.UserPrincipalName "to" $group.DisplayName
-            New-MgGroupMember -GroupId $group.Id -DirectoryObjectId $_.Id
-        }
-    }
-
-}
-
-
 
 $env:PSModulePath = "C:\Users\ccrain.TREMBLANT\Documents\PowerShell\Modules;C:\Program Files\PowerShell\Modules;c:\program files\powershell\7\Modules;C:\Program Files\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules"

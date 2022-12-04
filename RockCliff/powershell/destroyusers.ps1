@@ -11,4 +11,3 @@ foreach ($user in $users) {
     $upn = $user.FirstName + "." + $user.LastName + "@phoenixfinancialcapital.onmicrosoft.com"
     Destroy-AzADUser $upn
 } 
-

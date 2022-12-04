@@ -46,7 +46,7 @@ function Generate-RandomUserNamesFile {
     $marketssuffix = 401
 
     do {
-        # Referring to an array index is much faster than doing a plain $namelist.name | Get-Random
+        # Referring to an array with index seems much faster than doing a plain $namelist.name | Get-Random
         $randomfirstname = $namelist.name[(Get-Random -Maximum $namelist.count)]
         $randomlastname = $namelist.name[(Get-Random -Maximum $namelist.count)]
         
@@ -82,19 +82,25 @@ function Create-AzADUser {
     $PasswordProfile = @{Password = $randompassword}
     $displayname = ($userobj.Firstname + " " + $userobj.LastName)
     $mailnickname = $displayname.replace(" ",".")
-    # Check to see if user with same name exists and if so how many
+    
+    # Check to see if user with same name exists and if so how many. This cmdlet initializes a $usercount variable automatically
     Get-MgUser -ConsistencyLevel eventual -Count userCount -Search ("DisplayName:$displayname") | Out-Null
-    # This cmdlet initializes a $usercount variable automatically
     if ($usercount -gt 0) {
         $upn = ($mailnickname + ($usercount + 1).tostring() + '@phoenixfinancialcapital.onmicrosoft.com')
     }
     else {$upn = ($mailnickname + "@phoenixfinancialcapital.onmicrosoft.com")}
     
-    $azureadgroup = "ADG_" + $userobj.Department
+    try {
+        $useraadobj = New-MgUser -DisplayName $displayname -PasswordProfile $PasswordProfile  -UserPrincipalName $upn  -AccountEnabled -MailNickName $mailnickname -CompanyName "Phoenix Financial Capital" -Department $userobj.Department -ShowInAddressList -BusinessPhones $userobj.TelephoneNumber
+        Write-Host "Created user" $displayname "on the" $userobj.Department "team with phone number" $userobj.TelephoneNumber "and UPN" $useraadobj.UserPrincipalName
+    }
+    catch {
+        Write-Host "Unable to create user" $upn"!" -BackgroundColor Darkred
+    }
 
-    Write-Host "Creating user" $displayname "on the" $userobj.Department "team with phone number" $userobj.TelephoneNumber "and UPN" $upn
+    $useraadobj | Add-Member -NotePropertyName "department" -NotePropertyValue $userobj.Department -Force
 
-    New-MgUser -DisplayName $displayname -PasswordProfile $PasswordProfile  -UserPrincipalName $upn  -AccountEnabled -MailNickName $mailnickname -CompanyName "Phoenix Financial Capital" -Department $userobj.Department -ShowInAddressList -BusinessPhones $userobj.TelephoneNumber | Out-Null
+    return $useraadobj
 
 }
 
@@ -129,16 +135,6 @@ function Generate-RandomPassword {
     }
  
     return (-join $result)
-}
-
-function Add-UsertoAzAdGroup {
-    param (
-        [Parameter(Mandatory=$True)] [string]$userid,
-        [Parameter(Mandatory=$True)] [string]$groupid
-    )
-
-    New-MgGroupMember -GroupId $targetgroupid -DirectoryObjectId $userid
-
 }
 
 function connect-tocitrix {

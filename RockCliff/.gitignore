@@ -48,3 +48,7 @@ info.txt
 
 # Ignore testing dir
 **/testing/**
+
+/powershell/**.csv
+
+**/blobstorage/**

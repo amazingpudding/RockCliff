@@ -9,7 +9,7 @@ variable "resource_group_name_prefix" {
 }
 
 variable "client_certificate_path" {
-  default = "C:\\Users\\ccrain.TREMBLANT\\Documents\\Git\\SRProject\\certs\\phxcert.pfx"
+  default = "C:\\Users\\ccrain.TREMBLANT\\Documents\\Git\\RockCliff\\certs\\phxcert.pfx"
 }  
   
 variable "client_certificate_password" {
@@ -24,4 +24,9 @@ variable "cidr_subnetblock" {
   default = "10.0.1.0/24"
 }
 
+data "azurerm_subscription" "current" {
+}
 
+data "azuread_group" "dynamicallusersgroup" { 
+  display_name     = "ADG_All_Users"
+}
