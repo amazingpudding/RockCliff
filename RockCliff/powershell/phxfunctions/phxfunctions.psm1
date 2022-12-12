@@ -136,8 +136,3 @@ function Generate-RandomPassword {
  
     return (-join $result)
 }
-
-function connect-tocitrix {
-    Set-XDCredentials -CustomerId "nhlfmfxoftji” -SecureClientFile “secureclient.csv” -ProfileType CloudAPI –StoreAs “default”
-
-}
