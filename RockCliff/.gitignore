@@ -52,3 +52,5 @@ info.txt
 /powershell/**.csv
 
 **/blobstorage/**
+
+**/__pycache__/**

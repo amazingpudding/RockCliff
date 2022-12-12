@@ -5,7 +5,7 @@ from time import sleep
 c = citrix()
 
 # Provide a list of users who need access to a new machine
-upns = ['Arthur.Ursula@phoenixfinancialcapital.onmicrosoft.com', 'Merle.Jenny@phoenixfinancialcapital.onmicrosoft.com']
+upns = ['Shane.Casey@phoenixfinancialcapital.onmicrosoft.com', 'Travis.Landin@phoenixfinancialcapital.onmicrosoft.com']
 
 # Add number of machines to the catalog equal to the number of users to be provisioned
 machinecreationresponse = c.addmachinestocatalog(count=len(upns))

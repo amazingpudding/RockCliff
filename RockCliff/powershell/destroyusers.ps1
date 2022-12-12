@@ -2,7 +2,7 @@ $env:PSModulePath = $env:PSModulePath + ";" + (Get-Location)
 
 Import-Module -Name phxfunctions -Force -DisableNameChecking
 
-# Destroy-AzADUser "Leonora.Renee@phoenixfinancialcapital.onmicrosoft.com"
+login-usingsp
 
 $users = import-csv "usernamelist.csv" 
 

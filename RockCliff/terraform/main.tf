@@ -20,15 +20,7 @@ resource "azurerm_virtual_network" "test" {
 }
 
 resource "azurerm_role_assignment" "dynamicgroup_to_subscription" {
-  scope                = data.azurerm_subscription.current
+  scope                = data.azurerm_subscription.current.id
   role_definition_name = "Virtual Machine User Login"
   principal_id         = data.azuread_group.dynamicallusersgroup.object_id
 }
-
-# NSG
-
-# Firewall (req's another subnet)
-
-# File server
-
-# Private endpoint
